@@ -52,6 +52,6 @@ var listCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(listCmd)
 
-	listCmd.Flags().IntVarP(&limit, "limit", "l", 10, "表示する単語の数")
+	listCmd.Flags().IntVarP(&limit, "limit", "l", 25, "表示する単語の数")
 	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "表示する単語のオフセット")
 }
