@@ -5,8 +5,11 @@ package cmd
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -76,5 +79,30 @@ func bindPFlag(flags *pflag.FlagSet, key string, flag ...string) {
 	}
 	if err := viper.BindPFlag(key, flags.Lookup(flag[0])); err != nil {
 		panic(err)
+	}
+}
+
+func setLogger() {
+	if config.DevMode {
+		logger := getCLILogger()
+		slog.SetDefault(logger)
+	} else {
+		logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+		slog.SetDefault(logger)
+	}
+}
+
+func getCLILogger() *slog.Logger {
+	return slog.New(slog.NewJSONHandler(os.Stdout, nil))
+}
+
+func waitSIGINT() {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	signal.Stop(quit)
+	close(quit)
+	for range quit {
+		continue
 	}
 }
