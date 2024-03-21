@@ -4,9 +4,12 @@ Copyright © 2024 tomo0611 <tomo0611@hotmail.com>
 package cmd
 
 import (
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -18,7 +21,7 @@ var (
 	// configFile 設定ファイルyamlのパス
 	configFile string
 	// c 設定
-	// c Config
+	config Config
 )
 
 var rootCmd = &cobra.Command{
@@ -36,6 +39,32 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&configFile, "config", "config.yml", "config file (default is config.yml)")
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".")
+
+	// 環境変数がすでに指定されてる場合はそちらを優先
+	viper.AutomaticEnv()
+
+	// データ構造をキャメルケースに切り替える用の設定
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		fmt.Printf("設定ファイル読み込みエラー: %s", err)
+		os.Exit(1)
+	}
+
+	err = viper.Unmarshal(&config)
+	if err != nil {
+		fmt.Printf("unmarshal error: %s", err)
+		os.Exit(1)
+	}
+
+	flags := rootCmd.PersistentFlags()
+	flags.StringVarP(&configFile, "config", "c", "", "config file path")
+	flags.Bool("dev", false, "development mode")
+	viper.BindPFlag("dev", flags.Lookup("dev"))
+
 	rootCmd.MarkFlagRequired("config")
 }

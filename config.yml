@@ -1,0 +1,15 @@
+dev: false
+
+port: 3000
+
+mariadb:
+  host: localhost
+  port: 3306
+  username: wordsplay
+  password: password
+  database: WORDS_PLAY
+
+externalAuth:
+  google:
+    clientId: clientId
+    clientSecret: clientSecret

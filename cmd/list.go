@@ -6,12 +6,9 @@ package cmd
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"os"
-	"time"
 
-	"github.com/go-sql-driver/mysql"
 	"github.com/tomo0611/words-play/database"
 
 	"github.com/spf13/cobra"
@@ -35,34 +32,13 @@ var listCmd = &cobra.Command{
 	Short: "単語の一覧を表示します。",
 	Long:  `単語の一覧を表示します。`,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		ctx := context.Background()
 
-		jst, err := time.LoadLocation("Asia/Tokyo")
+		db, err := config.getDatabase()
 		if err != nil {
 			fmt.Println(err.Error())
 			os.Exit(1)
 		}
-
-		c := mysql.Config{
-			DBName:    "WORDS_PLAY",
-			User:      "wordsplay",
-			Passwd:    "password",
-			Addr:      "localhost:3306",
-			Net:       "tcp",
-			ParseTime: true,
-			// 'mysql_native_password': this user requires mysql native password authentication
-			AllowNativePasswords: true,
-			Collation:            "utf8mb4_unicode_ci",
-			Loc:                  jst,
-		}
-
-		db, err := sql.Open("mysql", c.FormatDSN())
-		if err != nil {
-			fmt.Println(err.Error())
-			os.Exit(1)
-		}
-
 		queries := database.New(db)
 
 		// list words
