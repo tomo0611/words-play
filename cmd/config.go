@@ -8,6 +8,8 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/spf13/viper"
+	"github.com/tomo0611/words-play/router"
+	"github.com/tomo0611/words-play/router/auth"
 )
 
 // Config 設定
@@ -15,6 +17,8 @@ type Config struct {
 	// DevMode 開発モードかどうか (default: false)
 	DevMode bool `mapstructure:"dev" yaml:"dev"`
 
+	// Origin オリジン (default: http://localhost)
+	Origin string `mapstructure:"origin" yaml:"origin"`
 	// Port サーバーポート番号 (default: 3000)
 	Port int `mapstructure:"port" yaml:"port"`
 
@@ -28,7 +32,7 @@ type Config struct {
 		Username string `mapstructure:"username" yaml:"username"`
 		// Password パスワード (default: password)
 		Password string `mapstructure:"password" yaml:"password"`
-		// Database データベース名 (default: traq)
+		// Database データベース名 (default: wordsplay)
 		Database string `mapstructure:"database" yaml:"database"`
 	} `mapstructure:"mariadb" yaml:"mariadb"`
 
@@ -43,12 +47,13 @@ type Config struct {
 
 func init() {
 	viper.SetDefault("dev", false)
+	viper.SetDefault("origin", "http://localhost")
 	viper.SetDefault("port", 3000)
 	viper.SetDefault("mariadb.host", "127.0.0.1")
 	viper.SetDefault("mariadb.port", 3306)
 	viper.SetDefault("mariadb.username", "root")
 	viper.SetDefault("mariadb.password", "password")
-	viper.SetDefault("mariadb.database", "traq")
+	viper.SetDefault("mariadb.database", "wordsplay")
 	viper.SetDefault("externalAuth.google.clientId", "")
 	viper.SetDefault("externalAuth.google.clientSecret", "")
 }
@@ -79,4 +84,26 @@ func (c Config) getDatabase() (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func provideAuthGoogleProviderConfig(c *Config) auth.GoogleProviderConfig {
+	return auth.GoogleProviderConfig{
+		ClientID:     c.ExternalAuth.Google.ClientID,
+		ClientSecret: c.ExternalAuth.Google.ClientSecret,
+		CallbackURL:  c.Origin + "/api/auth/google/callback",
+	}
+}
+
+func provideRouterExternalAuthConfig(c *Config) router.ExternalAuthConfig {
+	return router.ExternalAuthConfig{
+		Google: provideAuthGoogleProviderConfig(c),
+	}
+}
+func provideRouterConfig(c *Config) *router.Config {
+	return &router.Config{
+		Development:  c.DevMode,
+		Version:      Version,
+		Revision:     Revision,
+		ExternalAuth: provideRouterExternalAuthConfig(c),
+	}
 }
