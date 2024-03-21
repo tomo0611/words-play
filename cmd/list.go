@@ -5,9 +5,14 @@ Copyright © 2024 tomo0611 <tomo0611@hotmail.com>
 package cmd
 
 import (
-	"encoding/json"
+	"context"
+	"database/sql"
 	"fmt"
 	"os"
+	"time"
+
+	"github.com/go-sql-driver/mysql"
+	"github.com/tomo0611/words-play/database"
 
 	"github.com/spf13/cobra"
 )
@@ -30,21 +35,48 @@ var listCmd = &cobra.Command{
 	Short: "単語の一覧を表示します。",
 	Long:  `単語の一覧を表示します。`,
 	Run: func(cmd *cobra.Command, args []string) {
-		raw, err := os.ReadFile("./private/words_out.json")
+
+		ctx := context.Background()
+
+		jst, err := time.LoadLocation("Asia/Tokyo")
 		if err != nil {
 			fmt.Println(err.Error())
 			os.Exit(1)
 		}
-		var words WordCollection
-		json.Unmarshal(raw, &words)
-		for i, word := range words.Words {
-			if i < offset {
-				continue
-			}
-			if i >= offset+limit {
-				break
-			}
-			fmt.Printf("%s: %s\n", word.Word_en, word.Word_ja)
+
+		c := mysql.Config{
+			DBName:    "WORDS_PLAY",
+			User:      "wordsplay",
+			Passwd:    "password",
+			Addr:      "localhost:3306",
+			Net:       "tcp",
+			ParseTime: true,
+			// 'mysql_native_password': this user requires mysql native password authentication
+			AllowNativePasswords: true,
+			Collation:            "utf8mb4_unicode_ci",
+			Loc:                  jst,
+		}
+
+		db, err := sql.Open("mysql", c.FormatDSN())
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+
+		queries := database.New(db)
+
+		// list words
+		words, err := queries.ListWords(ctx, database.ListWordsParams{
+			Limit:  int32(limit),
+			Offset: int32(offset),
+		})
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+
+		for _, word := range words {
+			fmt.Printf("%s: %s\n", word.WordEn, word.WordJa)
 		}
 	},
 }
