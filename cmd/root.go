@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
@@ -64,7 +65,16 @@ func init() {
 	flags := rootCmd.PersistentFlags()
 	flags.StringVarP(&configFile, "config", "c", "", "config file path")
 	flags.Bool("dev", false, "development mode")
-	viper.BindPFlag("dev", flags.Lookup("dev"))
+	bindPFlag(flags, "dev")
 
 	rootCmd.MarkFlagRequired("config")
+}
+
+func bindPFlag(flags *pflag.FlagSet, key string, flag ...string) {
+	if len(flag) == 0 {
+		flag = []string{key}
+	}
+	if err := viper.BindPFlag(key, flags.Lookup(flag[0])); err != nil {
+		panic(err)
+	}
 }
