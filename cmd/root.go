@@ -37,7 +37,5 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&configFile, "config", "config.yml", "config file (default is config.yml)")
-
-	// Cobra also supports local flags, which will only run when this action is called directly.
-	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.MarkFlagRequired("config")
 }
